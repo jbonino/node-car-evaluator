@@ -5,12 +5,25 @@ const fs = require("fs");
 
 /* Run all requests asynchronously*/
 
+//read links from file and then start main!
+fs.readFile(scraper.allLinksFilePath,(err,data)=>{
+  if(err){
+    return console.log(err);
+  }
+
+  main(JSON.parse(data));
+})
+
 //      (array links ex:'detroit')    (array)            US->STATE->{cityLinks: array, cityName: array}
 //JSON = { cityLinks: Array(420), stateNames: Array(52), US: Object}
 const main = (JSON) =>{
-  linkPrefixList = ['detroit','annarbor','porthuron'];
-  let requestQueue = async.queue((linkPrefix,callback)=>{
-    scraper.searchResults('https://'+linkPrefix+'.craigslist.org/search/cto?query=subaru+forester&min_price=500&max_price=2000&max_auto_year=2005')
+  mainResults = [];//scrapped results live here  
+  linkPrefixList = JSON.cityLinks; //test prefix
+
+  //queue to asynchronously request craigslist pages and scrape results
+  const q = async.queue((linkPrefix,callback)=>{
+    //searchResults takes a link and returns a promise with a scraped array as an aruement
+    scraper.searchResults('https://'+linkPrefix+'.craigslist.org/search/cto?query=subaru+forester')
       .then((res)=>{
         res = {
           results: res,
@@ -21,27 +34,21 @@ const main = (JSON) =>{
       .catch((err)=>{
         callback(null,err);
       })
-
-  }, linkPrefixList.length);
-
-  totalResults = [];
+  }, 1);
+  
   _.each(linkPrefixList,(linkPrefix)=>{
-    requestQueue.push(linkPrefix,(res,err)=>{
+    q.push(linkPrefix,(res,err)=>{
       //callback (means im finished with on request)
       if(err){
         return console.log(err);
       }
-      totalResults.push(res);
+      console.log('pussh baby puush ;)');
+      mainResults.push(res);
     })
-  })
+  });
 
+  q.drain = ()=>{
+    console.log('all items have been processed');
+  };
 }
-
-//read links from file and then start main!
-fs.readFile(scraper.allLinksFilePath,(err,data)=>{
-  if(err){
-    return console.log(err);
-  }
-  main(JSON.parse(data));
-})
 
