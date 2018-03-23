@@ -2,7 +2,8 @@ const request = require("request-promise-native");
 const cheerio = require('cheerio');
 const fs = require("fs");
 
-exports.allLinksFilePath = './allLinks'
+exports.allLinksFilePath = './allLinks';
+exports.resultsFilePath = './results';
 
 
 /* Gets all craigslist postings from a single page. 
@@ -95,15 +96,6 @@ const parseAllLinks = $ => {
   };
 };
 
-const searchResultsOdemeter = (query, prefix, minMiles, maxMiles) =>{
-  return scrapeSearchResults(
-    'https://'+prefix+
-    '.craigslist.org/search/cto?query='+ query +
-    '&min_auto_miles='+minMiles+
-    '&max_auto_miles='+maxMiles+
-    '&bundleDuplicates=1')
-}
-
 exports.allLinksToFile = () =>{
   exports.allLinks()
     .then(res => {
@@ -117,5 +109,24 @@ exports.allLinksToFile = () =>{
     .catch(error => {
       console.log(error);
     });
+}
+
+//formats string then be passed as parameter to searchResults,
+//makes use of odemeter!
+exports.searchResultsOdemeter = (query, prefix, minMiles, maxMiles) =>{
+  return exports.searchResults(
+    'https://'+prefix+
+    '.craigslist.org/search/cto?query='+ query +
+    '&min_auto_miles='+minMiles+
+    '&max_auto_miles='+maxMiles+
+    '&bundleDuplicates=1')
+}
+exports.resultsToFile = (res) =>{
+  fs.writeFile(exports.resultsFilePath, JSON.stringify(res), err => {
+    if (err) {
+      return console.log(err);
+    }
+    console.log("The file was saved!");
+  });
 }
 
